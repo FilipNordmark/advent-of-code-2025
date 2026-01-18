@@ -37,7 +37,7 @@ iterateRolls(Dict, Dict1) :-
 iterateUntilStable(Iter, Start, End) :- call(Iter, Start, Next), (Next = Start -> End = Start ; iterateUntilStable(Iter, Next, End)).
 
 run(File) :-
-    phrase_from_file(buildDict(D), "day4Input.txt"),
+    phrase_from_file(buildDict(D), File),
     iterateRolls(D, D1),
     nrRolls(D, NBeg),
     nrRolls(D1, NFirst),
