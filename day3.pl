@@ -24,8 +24,8 @@ maxRest([N|Ns], MaxC, RestC, Max, Rest) :- N =< MaxC, maxRest(Ns, MaxC, RestC, M
 
 % maxRest(Count, Rest, Res)
 maxRest(0, RestC, _, RestC).
-maxRest(C, [MaxC|_], [N|Ns], Rest) :- N > MaxC, C1 is C - 1, maxRest(C1, [N|Ns], Ns, Rest).
-maxRest(C, [MaxC|RestC], [N|Ns], Rest) :- N =< MaxC, C1 is C - 1, maxRest(C1, [MaxC|RestC], Ns, Rest).
+maxRest(C, [MaxC|_], [N|Ns], Res) :- N > MaxC, C1 is C - 1, maxRest(C1, [N|Ns], Ns, Res).
+maxRest(C, [MaxC|RestC], [N|Ns], Res) :- N =< MaxC, C1 is C - 1, maxRest(C1, [MaxC|RestC], Ns, Res).
 
 
 takeBest12(Ns, N) :- takeBestN(12, Ns, Res), number_chars(N, Res).
