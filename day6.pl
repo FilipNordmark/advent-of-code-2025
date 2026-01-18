@@ -22,3 +22,29 @@ run(File) :-
     maplist(applyOperator, Ops, Transp, Results),
     sum_list(Results, Res),
     writeln(Res).
+
+
+
+% 32 is space ' '
+padToSameLength([], [], []).
+padToSameLength([_|Ls], [], [32|Rest]) :- padToSameLength(Ls, [], Rest).
+padToSameLength([_|Ls], [R|Rs], [R|Rest]) :- padToSameLength(Ls, Rs, Rest).
+
+
+parseNumbers([]) --> blanks_to_nl.
+parseNumbers([N|Ns]) --> blanks, integer(N), blanks_to_nl, parseNumbers(Ns).
+
+
+parseCollumn((Op, [N|Ns])) --> blanks, integer(N), whites, parseOperator(Op), blanks, parseNumbers(Ns).
+
+run2(File) :-
+    phrase_from_file(sequence(string_without("\n"), "\n", Rows), File),
+    Rows = [H|_],
+    maplist(padToSameLength(H), Rows, PaddedRows),
+    transpose(PaddedRows, Colls),
+    maplist([List, List0]>>append(List,`\n`, List0), Colls, Colls0),
+    flatten(Colls0, Codes),
+    phrase(sequence(parseCollumn, Problems), Codes),
+    maplist([(Op, Nums), Res]>>(applyOperator(Op, Nums, Res)), Problems, Results),
+    sum_list(Results, Sum),
+    writeln(Sum).
