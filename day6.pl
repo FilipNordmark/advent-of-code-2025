@@ -30,21 +30,20 @@ padToSameLength([], [], []).
 padToSameLength([_|Ls], [], [32|Rest]) :- padToSameLength(Ls, [], Rest).
 padToSameLength([_|Ls], [R|Rs], [R|Rest]) :- padToSameLength(Ls, Rs, Rest).
 
+tokenize((N, Op)) --> blanks, integer(N), blanks, parseOperator(Op), blanks.
+tokenize(Int) --> blanks, integer(Int), blanks.
+tokenize(eol) --> blanks.
 
-parseNumbers([]) --> blanks_to_nl.
-parseNumbers([N|Ns]) --> blanks, integer(N), blanks_to_nl, parseNumbers(Ns).
-
-
-parseCollumn((Op, [N|Ns])) --> blanks, integer(N), whites, parseOperator(Op), blanks, parseNumbers(Ns).
+parseIntegerToken(N) --> [N], {integer(N)}.
+parseTokens((Op, [N|Ns])) --> [(N, Op)], {member(Op, [+, *])}, sequence(parseIntegerToken, Ns), ([eol] ; []).
 
 run2(File) :-
     phrase_from_file(sequence(string_without("\n"), "\n", Rows), File),
     Rows = [H|_],
     maplist(padToSameLength(H), Rows, PaddedRows),
     transpose(PaddedRows, Colls),
-    maplist([List, List0]>>append(List,`\n`, List0), Colls, Colls0),
-    flatten(Colls0, Codes),
-    phrase(sequence(parseCollumn, Problems), Codes),
+    maplist([String, Token]>>phrase(tokenize(Token), String), Colls, Tokens),
+    phrase(sequence(parseTokens, Problems), Tokens),
     maplist([(Op, Nums), Res]>>(applyOperator(Op, Nums, Res)), Problems, Results),
     sum_list(Results, Sum),
     writeln(Sum).
