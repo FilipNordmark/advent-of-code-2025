@@ -1,28 +1,34 @@
-:- use_module(library(dcg/basics)).
+:- use_module(library(pio)).
 :- use_module(library(lists)).
-:- use_module(library(apply)).
+:- use_module(library(assoc)).
+:- use_module(library(lambda)).
+:- use_module(library(tabling)).
 
-parseLines([]) --> eos.
-parseLines([C|Cs]) --> string_without("\n", C), "\n", string_without("\n", _), "\n", parseLines(Cs).
+parseLines([T|Ts]) --> parseLine(0, P), !, {list_to_assoc(P, T)}, seq(_), "\n", !, parseLines(Ts).
+parseLines([]) --> "".
 
 
-% '.' -> 46, 'S' -> 83, '^' -> 94
+parseLine(_, []) --> "\n".
+parseLine(N, T) --> ".", {N1 is N + 1}, parseLine(N1, T).
+parseLine(N, [N-1|T]) --> [C], {member(C, "S^"), N1 is N + 1}, parseLine(N1, T).
 
-fallThrough([X, 94, Z|T], [83, 46, 83|T]) :- !.
-fallThrough([X, Y, Z|T], [X, 83, Z|T]).
 
-iterate([], In, In).
-iterate([83|T], In, [Done|Rest]) :- !, fallThrough(In, [Done|In0]), iterate(T, In0, Rest).
-iterate([_|T], [Done|In], [Done|Rest]) :- iterate(T, In, Rest).
+iterateN(In, L, Out) :- empty_assoc(Out0), assoc_to_list(L, Pairs), iterateN(In, Pairs, Out0, Out).
 
+iterateN(_, [], Out, Out).
+iterateN(In, [I-N|Ns], Out0, Out) :- get_assoc(I, In, _), !, Il is I - 1, Ir is I + 1, addOrInsert(Il, Out0, N, Out1), addOrInsert(Ir, Out1, N, Out2), iterateN(In, Ns, Out2, Out).
+iterateN(In, [I-N|Ns], Out0, Out) :- \+ get_assoc(I, In, _), !, addOrInsert(I, Out0, N, Out1), iterateN(In, Ns, Out1, Out).
+
+addOrInsert(I, In, N, Out) :-
+    (   get_assoc(I, In, M) -> N0 is M + N, put_assoc(I, In, N0, Out)
+    ;   put_assoc(I, In, N, Out)
+    ).
 
 hit(83, 94).
 
 run(File) :-
-    phrase_from_file(parseLines([H|Ls]), File),
-    scanl([Spliter, [_|Laser], Next]>>iterate(Laser, Spliter, Next), Ls, H, Lasers),
-    append(LasersExceptLast, [_], Lasers),
-    maplist(maplist([Laser, Spliter, Hit]>>(hit(Laser, Spliter) -> Hit = 1 ; Hit = 0)), LasersExceptLast, Ls, Hits),
-    maplist(sum_list, Hits, NrHits),
-    sum_list(NrHits, N),
-    write(N).
+    phrase_from_file(parseLines([L|Ls]), File),
+    foldl(iterateN, Ls, L, Out),
+    assoc_to_values(Out, Vals),
+    sum_list(Vals, Sum),
+    write(Sum).
